@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Explorer - Advanced Solar System</title>
+    <title>starHopper - Cosmic Exploration</title>
     <style>
         * {
             margin: 0;
@@ -1988,7 +1988,7 @@
                 info.innerHTML = `
                     <h3>${mission.name}</h3>
                     ${missionKey === 'iss' ? '<p>International Space Station</p><p>Orbits Earth every 90 minutes</p><p>Altitude: 408 km</p>' : ''}
-                    ${missionKey === 'perseverance' ? '<p>Mars 2020 Rover</p><p>Exploring Jezero Crater</p><p>Searching for ancient life</p>' : ''}
+                    ${missionKey === 'perseverance' ? '<p>Mars 2020 Rover</p><p>Exploring Jezero Crater</p><p>Searching for ancient microbial life</p>' : ''}
                     ${missionKey === 'voyager1' ? '<p>Launched: September 5, 1977</p><p>Farthest human-made object</p><p>Entered interstellar space: 2012</p><p>Currently: ~165 AU from Sun</p>' : ''}
                     ${missionKey === 'voyager2' ? '<p>Launched: August 20, 1977</p><p>Grand Tour of outer planets</p><p>Entered interstellar space: 2018</p><p>Currently: ~137 AU from Sun</p>' : ''}
                     ${missionKey === 'jwst' ? '<p>James Webb Space Telescope</p><p>Observing from L2 point</p><p>Seeing 13.5 billion years back</p>' : ''}
@@ -2232,16 +2232,21 @@
                 
                 info.innerHTML = `
                     <h3>🛰️ Voyager 1</h3>
-                    <p><strong>Current Location:</strong> Interstellar Space</p>
-                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER1_REF_DIST_AU).toFixed(1)} AU</p>
+                    <p><strong>Status:</strong> Farthest human-made object, exploring interstellar space.</p>
+                    <p><strong>Launched:</strong> September 5, 1977</p>
+                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER1_REF_DIST_AU).toFixed(1)} AU (${(mission.distanceFromSun || VOYAGER1_REF_DIST_AU * 149.6).toFixed(0)} million km / ${((mission.distanceFromSun || VOYAGER1_REF_DIST_AU * 149.6) * 0.621371).toFixed(0)} million miles)</p>
                     <p><strong>Years in space:</strong> ${yearsInSpace.toFixed(1)} years</p>
                     <p><strong>Signal delay (one way):</strong> ${hours}h ${minutes}m ${seconds}s</p>
                     <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
-                        <p>• Launched: September 5, 1977</p>
                         <p>• Jupiter flyby: March 1979</p>
                         <p>• Saturn flyby: November 1980</p>
                         <p>• Entered interstellar space: August 2012</p>
-                        <p>• Farthest human-made object from Earth</p>
+                        <p>• Famous for the 'Pale Blue Dot' image of Earth.</p>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                        <p><strong>Fun Facts:</strong></p>
+                        <p>  - Temp: ~2.7 K (-270°C / -455°F)</p>
+                        <p>  - A 747 jet would take over ${((mission.distanceFromSun || VOYAGER1_REF_DIST_AU * 149600000) / 900 / 24 / 365).toFixed(0)} years to reach this far!</p>
+                        <p>  - Its computer has ~68KB memory, millions of times less than a smartphone.</p>
                     </div>
                 `;
             } else if (key === 'voyager2') {
@@ -2253,17 +2258,22 @@
                 
                 info.innerHTML = `
                     <h3>🛰️ Voyager 2</h3>
-                    <p><strong>Current Location:</strong> Interstellar Space</p>
-                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER2_REF_DIST_AU).toFixed(1)} AU</p>
+                    <p><strong>Status:</strong> Exploring interstellar space after a "Grand Tour" of the outer planets.</p>
+                    <p><strong>Launched:</strong> August 20, 1977 (before Voyager 1)</p>
+                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER2_REF_DIST_AU).toFixed(1)} AU (${(mission.distanceFromSun || VOYAGER2_REF_DIST_AU * 149.6).toFixed(0)} million km / ${((mission.distanceFromSun || VOYAGER2_REF_DIST_AU * 149.6) * 0.621371).toFixed(0)} million miles)</p>
                     <p><strong>Years in space:</strong> ${yearsInSpace.toFixed(1)} years</p>
                     <p><strong>Signal delay (one way):</strong> ${hours}h ${minutes}m ${seconds}s</p>
                     <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
-                        <p>• Launched: August 20, 1977</p>
                         <p>• Jupiter flyby: July 1979</p>
                         <p>• Saturn flyby: August 1981</p>
                         <p>• Uranus flyby: January 1986</p>
                         <p>• Neptune flyby: August 1989</p>
                         <p>• Entered interstellar space: November 2018</p>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                        <p><strong>Fun Facts:</strong></p>
+                        <p>  - Temp: ~2.7 K (-270°C / -455°F)</p>
+                        <p>  - A 747 jet would take over ${((mission.distanceFromSun || VOYAGER2_REF_DIST_AU * 149600000) / 900 / 24 / 365).toFixed(0)} years to reach this far!</p>
+                        <p>  - Its computer has ~68KB memory, millions of times less than a smartphone.</p>
                     </div>
                 `;
             } else if (key === 'jwst') {
