@@ -1,0 +1,2500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Explorer - Advanced Solar System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            background: #0a0a0a;
+            color: white;
+        }
+        
+        canvas {
+            display: block;
+            background: radial-gradient(ellipse at center, #0a1929 0%, #000511 100%);
+        }
+        
+        /* Modern glassmorphic panels */
+        .panel {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .panel:hover {
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Hide panels animation */
+        .panel.hidden {
+            transform: translateX(-120%);
+            opacity: 0;
+        }
+        
+        #missionControl.hidden,
+        #modeSelector.hidden {
+            transform: translateX(120%);
+        }
+        
+        #timeMachine.hidden {
+            transform: translateY(120%);
+        }
+        
+        /* Left control panel */
+        #mainControls {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        
+        /* Right panels */
+        #missionControl {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+        }
+        
+        #modeSelector {
+            top: 280px;
+            right: 20px;
+            width: 300px;
+        }
+        
+        /* Bottom time machine */
+        #timeMachine {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 900px;
+        }
+        
+        /* Headers */
+        h2, h3 {
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        h2 {
+            font-size: 20px;
+            color: #60a5fa;
+        }
+        
+        h3 {
+            font-size: 18px;
+            color: #fbbf24;
+        }
+        
+        /* Control groups */
+        .control-group {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        /* Modern sliders */
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: background 0.3s;
+        }
+        
+        input[type="range"]:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 12px rgba(59, 130, 246, 0.6);
+        }
+        
+        /* Modern buttons */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #4c1d95, #5b21b6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        /* Mode selector cards */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .mode-card {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            text-align: center;
+        }
+        
+        .mode-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .mode-card.active {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        .mode-card .icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        .mode-card .name {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* Checkboxes */
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        /* Mission items */
+        .mission-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mission-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .mission-status {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        /* Time machine */
+        #yearDisplay {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+        }
+        
+        .timeline-markers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #64748b;
+        }
+        
+        .timeline-marker {
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .timeline-marker:hover {
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        /* Info popup */
+        #infoPopup {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 16px;
+            color: white;
+            display: none;
+            min-width: 280px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+        }
+        
+        /* Status displays */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        
+        .status-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .status-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #60a5fa;
+        }
+        
+        .status-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        /* UI Toggle button */
+        #uiToggle {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #uiToggle:hover {
+            background: rgba(15, 23, 42, 0.95);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(-50%) translateY(-2px);
+        }
+        
+        /* Minimal info display */
+        #minimalInfo {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #minimalInfo.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Keyboard hints */
+        #keyboardHints {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #64748b;
+            font-size: 12px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        /* Loading animation */
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+        
+        .loading {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Fade animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .panel {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <!-- UI Toggle Button -->
+    <button id="uiToggle">
+        <span id="toggleIcon">👁️</span>
+        <span id="toggleText">Hide UI</span>
+    </button>
+    
+    <!-- Keyboard Hints -->
+    <div id="keyboardHints">
+        Press H to hide/show • Space to pause • R to reset • T for trails
+    </div>
+    
+    <!-- Minimal Info Display -->
+    <div id="minimalInfo">
+        <span id="minimalYear">2025</span> • 
+        <span id="minimalSpeed">1x</span> • 
+        <span id="minimalMode">Solar System</span>
+    </div>
+    
+    <!-- Main Control Panel -->
+    <div id="mainControls" class="panel">
+        <h2>🌌 Cosmic Explorer</h2>
+        
+        <div class="control-group">
+            <label>Animation Speed: <span id="speedValue">1x</span></label>
+            <input type="range" id="speedSlider" min="0" max="10" value="1" step="0.1">
+            
+            <label style="margin-top: 12px;">Zoom: <span id="zoomValue">0.9x</span></label>
+            <input type="range" id="zoomSlider" min="0.3" max="2" value="0.9" step="0.1">
+            
+            <div class="button-group">
+                <button id="pauseBtn">⏸ Pause</button>
+                <button id="resetBtn">🔄 Reset</button>
+                <button id="trailsBtn" class="active">✨ Trails</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3 style="font-size: 16px;">Features</h3>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="voyagerToggle" checked> Voyager Probes
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="lensingToggle" checked> Gravitational Lensing
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="lagrangeToggle" checked> Lagrange Points
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="blackHoleToggle" checked> Black Hole
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="missionsToggle" checked> Space Missions
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="kuiperBeltToggle" checked> Kuiper Belt
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="jwstToggle" checked> James Webb Telescope
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="issToggle" checked> International Space Station
+                </label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3 style="font-size: 16px;">Dyson Sphere</h3>
+            <label>Construction: <span id="dysonValue">0%</span></label>
+            <input type="range" id="dysonSlider" min="0" max="100" value="0" step="1">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-value" id="energyCollection">0</div>
+                    <div class="status-label">TW Collected</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-value" id="kardashevScale">0.73</div>
+                    <div class="status-label">Kardashev Scale</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mission Control -->
+    <div id="missionControl" class="panel">
+        <h3>🎮 Mission Control</h3>
+        <div class="mission-item" data-mission="iss">
+            <span>🛰️ ISS</span>
+            <span class="mission-status">Orbiting Earth</span>
+        </div>
+        <div class="mission-item" data-mission="perseverance">
+            <span>🔴 Perseverance</span>
+            <span class="mission-status">Mars Surface</span>
+        </div>
+        <div class="mission-item" data-mission="voyager1">
+            <span>🛰️ Voyager 1</span>
+            <span class="mission-status"><span id="v1Distance">165</span> AU</span>
+        </div>
+        <div class="mission-item" data-mission="voyager2">
+            <span>🛰️ Voyager 2</span>
+            <span class="mission-status"><span id="v2Distance">137</span> AU</span>
+        </div>
+        <div class="mission-item" data-mission="jwst">
+            <span>📡 JWST</span>
+            <span class="mission-status">L2 Point</span>
+        </div>
+    </div>
+    
+    <!-- Mode Selector -->
+    <div id="modeSelector" class="panel">
+        <h3>🎯 View Modes</h3>
+        <div class="mode-grid">
+            <div class="mode-card" data-mode="solar">
+                <div class="icon">☀️</div>
+                <div class="name">Solar System</div>
+            </div>
+            <div class="mode-card" data-mode="exoplanet">
+                <div class="icon">👽</div>
+                <div class="name">Exoplanets</div>
+            </div>
+            <div class="mode-card" data-mode="lightspeed">
+                <div class="icon">💡</div>
+                <div class="name">Light Speed</div>
+            </div>
+            <div class="mode-card" data-mode="zodiac">
+                <div class="icon">♈</div>
+                <div class="name">Zodiac</div>
+            </div>
+        </div>
+        
+        <div id="modeInfo" style="margin-top: 12px; font-size: 12px; color: #64748b; display: none;">
+        </div>
+    </div>
+    
+    <!-- Time Machine -->
+    <div id="timeMachine" class="panel">
+        <h3>⏰ Time Machine</h3>
+        <div id="yearDisplay">2025</div>
+        <input type="range" id="timeSlider" min="1900" max="2100" value="2025" step="0.1">
+        <div class="timeline-markers">
+            <span class="timeline-marker" data-year="1969">🌙 1969</span>
+            <span class="timeline-marker" data-year="1977">🚀 1977</span>
+            <span class="timeline-marker" data-year="1986">☄️ 1986</span>
+            <span class="timeline-marker" data-year="2025">📍 Today</span>
+            <span class="timeline-marker" data-year="2061">☄️ 2061</span>
+        </div>
+    </div>
+    
+    <!-- Info Popup -->
+    <div id="infoPopup"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Animation variables
+        let animationSpeed = 1;
+        let zoom = 0.9;
+        let isPaused = false;
+        let showTrails = true;
+        let showVoyager = true;
+        let showLensing = true;
+        let showLagrange = true;
+        let showBlackHole = true;
+        let showMissions = true;
+        let currentYear = 2025;
+        let time = 0;
+        let selectedMission = null;
+        let currentMode = 'solar';
+        let dysonProgress = 0;
+        let showLightDelay = false;
+        let showZodiac = false;
+        let showKuiperBelt = true;
+        let showJWST = true;
+        let showISS = true;
+        
+        // Voyager Probes - Reference Data (as of mid-2024)
+        const VOYAGER1_REF_YEAR = 2024.4;
+        const VOYAGER1_REF_DIST_AU = 163.5;
+        const VOYAGER1_SPEED_AU_PER_YEAR = 3.6;
+
+        const VOYAGER2_REF_YEAR = 2024.4;
+        const VOYAGER2_REF_DIST_AU = 139.25;
+        const VOYAGER2_SPEED_AU_PER_YEAR = 3.3;
+        
+        // Background stars for lensing effect
+        const backgroundStars = [];
+        for (let i = 0; i < 500; i++) {
+            backgroundStars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * 2 + 0.5,
+                brightness: Math.random() * 0.5 + 0.5
+            });
+        }
+        
+        // Planet data
+        const planets = [
+            {
+                name: 'Mercury',
+                radius: 4, // Visual scaling radius
+                distance: 50, // Visual scaling distance for plotting
+                period: 0.2408, // Orbital period in Earth years
+                speed: 4.15, // Orbital speed factor for simulation
+                color: '#8B7355',
+                size: 'Smallest planet, closest to the Sun', // Key characteristic
+                angle: 0,
+                trail: [],
+                mass: 0.055, // Earth masses
+                // --- New detailed fields ---
+                diameter_km: 4879,
+                surface_gravity_g: 0.38,
+                rotation_period_earth_days: 58.6,
+                length_of_day_earth_days: 175.9,
+                mean_orbital_distance_au: 0.387,
+                moons: 0,
+                fun_fact: "A year on Mercury (88 Earth days) is shorter than its solar day (176 Earth days)!"
+            },
+            {
+                name: 'Venus',
+                radius: 8,
+                distance: 80,
+                period: 0.6152,
+                speed: 1.62,
+                color: '#FFC649',
+                size: "Earth's 'sister planet' due to similar size and mass",
+                angle: 0.7,
+                trail: [],
+                mass: 0.815,
+                // --- New detailed fields ---
+                diameter_km: 12104,
+                surface_gravity_g: 0.904,
+                rotation_period_earth_days: -243.0, // Negative for retrograde rotation
+                length_of_day_earth_days: 116.8,
+                mean_orbital_distance_au: 0.723,
+                moons: 0,
+                fun_fact: "Venus rotates backwards (retrograde) and has a surface hot enough to melt lead."
+            },
+            {
+                name: 'Earth',
+                radius: 8,
+                distance: 110,
+                period: 1,
+                speed: 1,
+                color: '#4A90E2',
+                size: 'Our home planet, the only known to harbor life',
+                angle: 1.4,
+                trail: [],
+                mass: 1,
+                // --- New detailed fields ---
+                diameter_km: 12742,
+                surface_gravity_g: 1.0,
+                rotation_period_earth_days: 0.997,
+                length_of_day_earth_days: 1.0,
+                mean_orbital_distance_au: 1.0,
+                moons: 1,
+                fun_fact: "Earth is the only planet not named after a Roman or Greek god."
+            },
+            {
+                name: 'Mars',
+                radius: 5,
+                distance: 150,
+                period: 1.8808,
+                speed: 0.53,
+                color: '#CD5C5C',
+                size: 'The Red Planet, home to the largest volcano, Olympus Mons',
+                angle: 2.1,
+                trail: [],
+                mass: 0.107,
+                // --- New detailed fields ---
+                diameter_km: 6779,
+                surface_gravity_g: 0.379,
+                rotation_period_earth_days: 1.026,
+                length_of_day_earth_days: 1.027,
+                mean_orbital_distance_au: 1.524,
+                moons: 2,
+                fun_fact: "Mars has the tallest volcano and the deepest, longest canyon in our solar system."
+            },
+            {
+                name: 'Jupiter',
+                radius: 20,
+                distance: 250,
+                period: 11.862,
+                speed: 0.084,
+                color: '#DAA520',
+                size: 'Largest planet, a gas giant with a Great Red Spot',
+                angle: 2.8,
+                trail: [],
+                mass: 317.8,
+                hasLensing: true,
+                // --- New detailed fields ---
+                diameter_km: 139820,
+                surface_gravity_g: 2.528,
+                rotation_period_earth_days: 0.414, // (approx 9.9 hours)
+                length_of_day_earth_days: 0.414,
+                mean_orbital_distance_au: 5.204,
+                moons: 95, // As of early 2024
+                fun_fact: "Jupiter has the shortest day of all planets and more than twice the mass of all other planets combined."
+            },
+            {
+                name: 'Saturn',
+                radius: 17,
+                distance: 350,
+                period: 29.457,
+                speed: 0.034,
+                color: '#F4D03F',
+                size: 'Ringed planet, a gas giant known for its spectacular rings',
+                angle: 3.5,
+                trail: [],
+                hasRing: true,
+                mass: 95.2,
+                hasLensing: true,
+                // --- New detailed fields ---
+                diameter_km: 116460,
+                surface_gravity_g: 1.065,
+                rotation_period_earth_days: 0.444, // (approx 10.7 hours)
+                length_of_day_earth_days: 0.444,
+                mean_orbital_distance_au: 9.582,
+                moons: 146, // As of early 2024, most confirmed
+                fun_fact: "Saturn's rings are made of billions of ice particles, dust, and rocks. It could float in water if a large enough tub existed!"
+            },
+            {
+                name: 'Uranus',
+                radius: 10,
+                distance: 450,
+                period: 84.021,
+                speed: 0.012,
+                color: '#4FD0E0',
+                size: 'Ice giant, tilted on its side, with a blue-green hue',
+                angle: 4.2,
+                trail: [],
+                mass: 14.5,
+                // --- New detailed fields ---
+                diameter_km: 50724,
+                surface_gravity_g: 0.886,
+                rotation_period_earth_days: -0.718, // (approx 17.2 hours, retrograde for interior)
+                length_of_day_earth_days: 0.718,
+                mean_orbital_distance_au: 19.218,
+                moons: 27,
+                fun_fact: "Uranus rotates on its side, possibly due to a giant collision. Its winds can reach 900 km/h!"
+            },
+            {
+                name: 'Neptune',
+                radius: 10,
+                distance: 550,
+                period: 164.8,
+                speed: 0.006,
+                color: '#4169E1',
+                size: 'Ice giant, the windiest planet, with a deep blue color',
+                angle: 4.9,
+                trail: [],
+                mass: 17.1,
+                // --- New detailed fields ---
+                diameter_km: 49244,
+                surface_gravity_g: 1.137,
+                rotation_period_earth_days: 0.671, // (approx 16.1 hours)
+                length_of_day_earth_days: 0.671,
+                mean_orbital_distance_au: 30.11,
+                moons: 14,
+                fun_fact: "Neptune has the strongest winds in the Solar System, reaching up to 2,100 km/h (1,300 mph)."
+            }
+        ];
+        
+        // Exoplanet data
+        const exoplanets = [
+            {
+                name: 'Proxima Centauri b',
+                radius: 9,
+                distance: 40,
+                period: 0.0307,
+                speed: 32.5,
+                color: '#FF6B6B',
+                info: 'Closest exoplanet to Earth',
+                angle: 0,
+                trail: [],
+                system: 'Proxima Centauri'
+            },
+            {
+                name: 'Kepler-452b',
+                radius: 12,
+                distance: 200,
+                period: 1.05,
+                speed: 0.95,
+                color: '#4ECDC4',
+                info: "Earth's cousin - potentially habitable",
+                angle: 2,
+                trail: [],
+                system: 'Kepler-452'
+            },
+            {
+                name: 'HD 189733 b',
+                radius: 25,
+                distance: 60,
+                period: 0.0058,
+                speed: 172,
+                color: '#1E90FF',
+                info: 'Glass rain planet - 5400°F winds',
+                angle: 3,
+                trail: [],
+                system: 'HD 189733'
+            }
+        ];
+        
+        // TRAPPIST-1 system
+        const trappist1 = [
+            { name: 'TRAPPIST-1b', radius: 6, distance: 25, period: 0.00416, speed: 240, color: '#FF9999' },
+            { name: 'TRAPPIST-1c', radius: 6, distance: 35, period: 0.00661, speed: 151, color: '#FFAA99' },
+            { name: 'TRAPPIST-1d', radius: 5, distance: 45, period: 0.01096, speed: 91, color: '#FFBB99' },
+            { name: 'TRAPPIST-1e', radius: 5, distance: 55, period: 0.01643, speed: 61, color: '#FFCC99' },
+            { name: 'TRAPPIST-1f', radius: 6, distance: 65, period: 0.02466, speed: 41, color: '#FFDD99' },
+            { name: 'TRAPPIST-1g', radius: 7, distance: 75, period: 0.03391, speed: 29, color: '#FFEE99' },
+            { name: 'TRAPPIST-1h', radius: 5, distance: 85, period: 0.05210, speed: 19, color: '#FFFF99' }
+        ];
+        
+        trappist1.forEach((planet, i) => {
+            planet.angle = i * 0.9;
+            planet.trail = [];
+            planet.system = 'TRAPPIST-1';
+            planet.info = 'Part of the TRAPPIST-1 system';
+        });
+        
+        // Zodiac constellations
+        const zodiacSigns = [
+            { name: 'Aries', symbol: '♈', start: 0, end: 30 },
+            { name: 'Taurus', symbol: '♉', start: 30, end: 60 },
+            { name: 'Gemini', symbol: '♊', start: 60, end: 90 },
+            { name: 'Cancer', symbol: '♋', start: 90, end: 120 },
+            { name: 'Leo', symbol: '♌', start: 120, end: 150 },
+            { name: 'Virgo', symbol: '♍', start: 150, end: 180 },
+            { name: 'Libra', symbol: '♎', start: 180, end: 210 },
+            { name: 'Scorpio', symbol: '♏', start: 210, end: 240 },
+            { name: 'Sagittarius', symbol: '♐', start: 240, end: 270 },
+            { name: 'Capricorn', symbol: '♑', start: 270, end: 300 },
+            { name: 'Aquarius', symbol: '♒', start: 300, end: 330 },
+            { name: 'Pisces', symbol: '♓', start: 330, end: 360 }
+        ];
+        
+        // Voyager probes
+        const voyager1 = {
+            name: 'Voyager 1',
+            launched: 1977.67,
+            x: 0,
+            y: 0,
+            angle: 0,
+            distance: 110,
+            trail: [],
+            color: '#00ff88'
+        };
+        
+        const voyager2 = {
+            name: 'Voyager 2',
+            launched: 1977.63,
+            x: 0,
+            y: 0,
+            angle: Math.PI / 4,
+            distance: 110,
+            trail: [],
+            color: '#00ffff'
+        };
+        
+        // Space missions
+        const missions = {
+            iss: {
+                name: 'ISS',
+                orbiting: 'Earth',
+                period: 0.0625,
+                distance: 0.5,
+                angle: 0,
+                color: '#ffffff',
+                size: 2
+            },
+            perseverance: {
+                name: 'Perseverance',
+                orbiting: 'Mars',
+                landed: true,
+                angle: 0,
+                color: '#ff6b6b'
+            },
+            voyager1: {
+                name: 'Voyager 1',
+                launched: 1977.67,
+                angle: 0,
+                distance: 165,
+                color: '#00ff88',
+                trail: []
+            },
+            voyager2: {
+                name: 'Voyager 2',
+                launched: 1977.63,
+                angle: Math.PI / 4,
+                distance: 137,
+                color: '#00ffff',
+                trail: []
+            },
+            jwst: {
+                name: 'JWST',
+                atL2: true,
+                color: '#ffd700',
+                size: 3
+            }
+        };
+        
+        // Black hole
+        const blackHole = {
+            x: 0,
+            y: 0,
+            mass: 5000,
+            radius: 15,
+            distance: 700,
+            angle: Math.PI,
+            accretionDisk: []
+        };
+        
+        // Initialize accretion disk
+        for (let i = 0; i < 200; i++) {
+            blackHole.accretionDisk.push({
+                angle: Math.random() * Math.PI * 2,
+                radius: blackHole.radius + Math.random() * 40,
+                speed: Math.random() * 0.02 + 0.01,
+                size: Math.random() * 2 + 0.5,
+                color: Math.random() > 0.5 ? '#ff6b6b' : '#ffaa00'
+            });
+        }
+        
+        // Lagrange points calculation
+        function calculateLagrangePoints(planet) {
+            const points = [];
+            
+            points.push({
+                name: 'L1',
+                distance: planet.distance * 0.99,
+                angle: planet.angle
+            });
+            
+            points.push({
+                name: 'L2',
+                distance: planet.distance * 1.01,
+                angle: planet.angle
+            });
+            
+            points.push({
+                name: 'L3',
+                distance: planet.distance,
+                angle: planet.angle + Math.PI
+            });
+            
+            points.push({
+                name: 'L4',
+                distance: planet.distance,
+                angle: planet.angle + Math.PI / 3
+            });
+            
+            points.push({
+                name: 'L5',
+                distance: planet.distance,
+                angle: planet.angle - Math.PI / 3
+            });
+            
+            return points;
+        }
+        
+        // Calculate planet position for a given year
+        function calculatePlanetPosition(planet, year) {
+            const yearsElapsed = year - 2025;
+            const orbits = yearsElapsed / planet.period;
+            return orbits * Math.PI * 2 + planet.angle;
+        }
+        
+        // Calculate light travel time
+        function calculateLightDelay(distance) {
+            // distance in AU, light travels 1 AU in 499 seconds
+            return distance * 499; // returns total seconds
+        }
+        
+        // Get zodiac sign for angle
+        function getZodiacSign(angle) {
+            const degrees = (angle * 180 / Math.PI) % 360;
+            const normalizedDegrees = degrees < 0 ? degrees + 360 : degrees;
+            
+            for (const sign of zodiacSigns) {
+                if (normalizedDegrees >= sign.start && normalizedDegrees < sign.end) {
+                    return sign;
+                }
+            }
+            return zodiacSigns[0];
+        }
+        
+        function drawKuiperBelt() {
+            if (!showKuiperBelt) return;
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const kuiperBeltInnerRadius = 30 * 15 * zoom; // Starting just beyond Neptune (approx 30 AU * 15px/AU for scale)
+            const kuiperBeltOuterRadius = 55 * 15 * zoom; // Extending to 55 AU
+
+            // Draw the main Kuiper Belt band
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, kuiperBeltOuterRadius, 0, Math.PI * 2, false);
+            ctx.arc(centerX, centerY, kuiperBeltInnerRadius, 0, Math.PI * 2, true); // Counter-clockwise for inner hole
+            
+            // Create a subtle gradient for the belt
+            const gradient = ctx.createRadialGradient(centerX, centerY, kuiperBeltInnerRadius, centerX, centerY, kuiperBeltOuterRadius);
+            gradient.addColorStop(0, 'rgba(173, 216, 230, 0.0)'); // Light blue, more transparent near Neptune
+            gradient.addColorStop(0.3, 'rgba(173, 216, 230, 0.08)');
+            gradient.addColorStop(0.7, 'rgba(173, 216, 230, 0.08)');
+            gradient.addColorStop(1, 'rgba(173, 216, 230, 0.0)'); // Fading out at the outer edge
+
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw some representative KBOs
+            const numKBOs = 150; // Number of KBOs to draw
+            ctx.fillStyle = 'rgba(200, 220, 240, 0.4)'; // Slightly brighter for KBOs
+            for (let i = 0; i < numKBOs; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                // Distribute KBOs within the belt, slightly denser in the middle
+                const radius = kuiperBeltInnerRadius + Math.pow(Math.random(), 1.5) * (kuiperBeltOuterRadius - kuiperBeltInnerRadius);
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                const size = Math.random() * 1.5 + 0.5; 
+                ctx.beginPath();
+                ctx.arc(x, y, size * zoom, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Draw functions
+        function drawStars() {
+            backgroundStars.forEach(star => {
+                let finalX = star.x;
+                let finalY = star.y;
+                let distortion = 0;
+                let stretched = false;
+                
+                // Apply gravitational lensing
+                if (showLensing) {
+                    planets.forEach(planet => {
+                        if (planet.hasLensing && planet.x && planet.y) {
+                            const result = applyGravitationalLensing(
+                                star.x, star.y, planet.x, planet.y, 
+                                planet.mass, planet.radius
+                            );
+                            if (result.distorted) {
+                                finalX = result.x;
+                                finalY = result.y;
+                                distortion = Math.max(distortion, result.distortion);
+                            }
+                        }
+                    });
+                    
+                    if (showBlackHole && blackHole.x && blackHole.y) {
+                        const result = applyGravitationalLensing(
+                            finalX, finalY, blackHole.x, blackHole.y,
+                            blackHole.mass, blackHole.radius
+                        );
+                        if (result.distorted) {
+                            finalX = result.x;
+                            finalY = result.y;
+                            distortion = result.distortion;
+                            stretched = result.stretched;
+                        }
+                    }
+                }
+                
+                if (stretched) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${star.brightness})`;
+                    ctx.lineWidth = star.size;
+                    ctx.beginPath();
+                    const angle = Math.atan2(finalY - blackHole.y, finalX - blackHole.x);
+                    ctx.moveTo(finalX - Math.cos(angle) * 5, finalY - Math.sin(angle) * 5);
+                    ctx.lineTo(finalX + Math.cos(angle) * 5, finalY + Math.sin(angle) * 5);
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * (1 + distortion)})`;
+                    ctx.beginPath();
+                    ctx.arc(finalX, finalY, star.size * (1 + distortion * 0.5), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+        
+        function drawZodiacConstellations() {
+            if (!showZodiac) return;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = 600 * zoom;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // Draw zodiac wheel
+            zodiacSigns.forEach((sign, i) => {
+                const startAngle = (sign.start - 90) * Math.PI / 180;
+                const endAngle = (sign.end - 90) * Math.PI / 180;
+                
+                // Draw segment
+                ctx.strokeStyle = 'rgba(138, 43, 226, 0.2)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.stroke();
+                
+                // Draw constellation lines
+                ctx.strokeStyle = 'rgba(138, 43, 226, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(startAngle) * radius, Math.sin(startAngle) * radius);
+                ctx.stroke();
+                
+                // Draw symbol
+                const midAngle = (startAngle + endAngle) / 2;
+                const symbolX = Math.cos(midAngle) * (radius + 30);
+                const symbolY = Math.sin(midAngle) * (radius + 30);
+                
+                ctx.fillStyle = 'rgba(138, 43, 226, 0.8)';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(sign.symbol, symbolX, symbolY);
+                
+                // Draw name
+                ctx.font = '12px Arial';
+                ctx.fillStyle = 'rgba(138, 43, 226, 0.6)';
+                ctx.fillText(sign.name, symbolX, symbolY + 20);
+            });
+            
+            ctx.restore();
+        }
+        
+        function drawSun() {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Apply Dyson sphere dimming
+            const dimFactor = 1 - (dysonProgress / 100 * 0.8);
+            
+            // Sun glow
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 30 * zoom);
+            gradient.addColorStop(0, `rgba(255, 255, 0, ${dimFactor})`);
+            gradient.addColorStop(0.3, `rgba(255, 215, 0, ${0.8 * dimFactor})`);
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Sun core
+            ctx.fillStyle = `rgba(255, 215, 0, ${dimFactor})`;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 15 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw Dyson sphere
+            if (dysonProgress > 0) {
+                drawDysonSphere(centerX, centerY);
+            }
+        }
+        
+        function drawDysonSphere(x, y) {
+            const segments = 36;
+            const angleStep = (Math.PI * 2) / segments;
+            const completedSegments = Math.floor(segments * dysonProgress / 100);
+            
+            for (let i = 0; i < completedSegments; i++) {
+                const angle = i * angleStep;
+                const nextAngle = (i + 1) * angleStep;
+                
+                ctx.strokeStyle = `rgba(100, 200, 255, ${0.3 + (i / segments) * 0.3})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(x, y, 40 * zoom, angle, nextAngle);
+                ctx.stroke();
+                
+                // Inner layer
+                ctx.strokeStyle = `rgba(150, 220, 255, ${0.2 + (i / segments) * 0.2})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, 35 * zoom, angle, nextAngle);
+                ctx.stroke();
+            }
+            
+            // Energy collection effect
+            if (dysonProgress > 20) {
+                ctx.strokeStyle = `rgba(100, 255, 200, ${0.1 * (dysonProgress / 100)})`;
+                for (let r = 45; r < 60; r += 5) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * zoom, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        function drawOrbit(distance) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, distance * zoom, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        function drawSpaceTimeRipple(x, y, mass, radius) {
+            if (!showLensing || mass < 50) return;
+            
+            const ripples = 3;
+            for (let i = 0; i < ripples; i++) {
+                ctx.strokeStyle = `rgba(100, 150, 255, ${0.1 - i * 0.03})`;
+                ctx.lineWidth = 2 - i * 0.5;
+                ctx.beginPath();
+                ctx.arc(x, y, (radius * zoom * 2) + (i * radius * zoom), 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        function drawPlanet(planet, isExoplanet = false) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Update angle based on current year
+            const targetAngle = calculatePlanetPosition(planet, currentYear);
+            planet.angle = targetAngle;
+            
+            // Calculate position
+            const x = centerX + Math.cos(planet.angle) * planet.distance * zoom;
+            const y = centerY + Math.sin(planet.angle) * planet.distance * zoom;
+            
+            // Update trail
+            if (showTrails && !isPaused) {
+                planet.trail.push({ x, y });
+                if (planet.trail.length > 300) {
+                    planet.trail.shift();
+                }
+            }
+            
+            // Draw trail
+            if (showTrails && planet.trail.length > 1) {
+                ctx.strokeStyle = planet.color + '40';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(planet.trail[0].x, planet.trail[0].y);
+                for (let i = 1; i < planet.trail.length; i++) {
+                    ctx.lineTo(planet.trail[i].x, planet.trail[i].y);
+                }
+                ctx.stroke();
+            }
+            
+            // Draw space-time ripple for massive planets
+            if (!isExoplanet && planet.mass > 50) {
+                drawSpaceTimeRipple(x, y, planet.mass, planet.radius);
+            }
+            
+            // Draw planet glow
+            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, planet.radius * zoom * 2);
+            glowGradient.addColorStop(0, planet.color);
+            glowGradient.addColorStop(0.5, planet.color + '80');
+            glowGradient.addColorStop(1, planet.color + '00');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, planet.radius * zoom * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw planet
+            ctx.fillStyle = planet.color;
+            ctx.beginPath();
+            ctx.arc(x, y, planet.radius * zoom, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw Saturn's ring
+            if (planet.hasRing) {
+                ctx.strokeStyle = planet.color + '80';
+                ctx.lineWidth = 3 * zoom;
+                ctx.beginPath();
+                ctx.ellipse(x, y, planet.radius * zoom * 2, planet.radius * zoom * 0.7, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Draw light delay indicator
+            if (showLightDelay && !isExoplanet) {
+                const delay = calculateLightDelay(planet.distance);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${delay.toFixed(1)}m`, x, y - planet.radius * zoom - 10);
+            }
+            
+            // Draw zodiac position
+            if (showZodiac && !isExoplanet) {
+                const sign = getZodiacSign(planet.angle);
+                ctx.fillStyle = 'rgba(138, 43, 226, 0.8)';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(sign.symbol, x, y + planet.radius * zoom + 15);
+            }
+            
+            // Store position
+            planet.x = x;
+            planet.y = y;
+            
+            // Draw Lagrange points for Earth
+            if (showLagrange && planet.name === 'Earth' && !isExoplanet) {
+                const lagrangePoints = calculateLagrangePoints(planet);
+                lagrangePoints.forEach(point => {
+                    const lx = centerX + Math.cos(point.angle) * point.distance * zoom;
+                    const ly = centerY + Math.sin(point.angle) * point.distance * zoom;
+                    
+                    ctx.strokeStyle = '#00ff88';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#00ff88';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(point.name, lx + 8, ly - 8);
+                    
+                    if (point.name === 'L2') {
+                        missions.jwst.x = lx;
+                        missions.jwst.y = ly;
+                    }
+                });
+            }
+            
+            // Draw Jupiter's Trojan asteroids
+            if (showLagrange && planet.name === 'Jupiter') {
+                const trojans = calculateLagrangePoints(planet);
+                if (trojans && trojans.length >= 5) {
+                    const l4 = trojans[3];
+                    const l5 = trojans[4];
+                    
+                    // Draw asteroid clouds at L4 and L5
+                    [l4, l5].forEach(point => {
+                        if (point && point.angle !== undefined && point.distance !== undefined) {
+                            for (let i = 0; i < 20; i++) {
+                                const angle = point.angle + (Math.random() - 0.5) * 0.2;
+                                const dist = point.distance + (Math.random() - 0.5) * 20;
+                                const ax = centerX + Math.cos(angle) * dist * zoom;
+                                const ay = centerY + Math.sin(angle) * dist * zoom;
+                                
+                                ctx.fillStyle = '#666666';
+                                ctx.beginPath();
+                                ctx.arc(ax, ay, 1, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        
+        function drawVoyager(voyager) {
+            if (!showVoyager || currentYear < voyager.launched) return;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Calculate distance based on new reference model
+            let ref_year, ref_dist, current_speed;
+            if (voyager.name === 'Voyager 1') {
+                ref_year = VOYAGER1_REF_YEAR;
+                ref_dist = VOYAGER1_REF_DIST_AU;
+                current_speed = VOYAGER1_SPEED_AU_PER_YEAR;
+            } else { // Voyager 2
+                ref_year = VOYAGER2_REF_YEAR;
+                ref_dist = VOYAGER2_REF_DIST_AU;
+                current_speed = VOYAGER2_SPEED_AU_PER_YEAR;
+            }
+            const years_from_ref = currentYear - ref_year;
+            const new_distance = ref_dist + (years_from_ref * current_speed);
+            voyager.distance = new_distance; // Update the voyager object's distance property
+            
+            // Angle calculation remains based on years since launch for divergence
+            const yearsSinceLaunch = currentYear - voyager.launched;
+            let angle = voyager.angle;
+            if (voyager.name === 'Voyager 1') {
+                angle += yearsSinceLaunch * 0.002;
+            } else {
+                angle -= yearsSinceLaunch * 0.001;
+            }
+            
+            const x = centerX + Math.cos(angle) * voyager.distance * zoom; // Use updated voyager.distance
+            const y = centerY + Math.sin(angle) * voyager.distance * zoom; // Use updated voyager.distance
+            
+            // Update trail
+            voyager.trail.push({ x, y });
+            if (voyager.trail.length > 400) {
+                voyager.trail.shift();
+            }
+            
+            // Draw trail
+            if (voyager.trail.length > 1) {
+                const gradient = ctx.createLinearGradient(
+                    voyager.trail[0].x, voyager.trail[0].y,
+                    x, y
+                );
+                gradient.addColorStop(0, voyager.color + '00');
+                gradient.addColorStop(0.5, voyager.color + '40');
+                gradient.addColorStop(1, voyager.color + '80');
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(voyager.trail[0].x, voyager.trail[0].y);
+                for (let i = 1; i < voyager.trail.length; i++) {
+                    ctx.lineTo(voyager.trail[i].x, voyager.trail[i].y);
+                }
+                ctx.stroke();
+            }
+            
+            // Draw probe with bright glow
+            const glowSize = 12 + Math.sin(Date.now() * 0.003) * 4;
+            
+            // Outer glow
+            const glowGradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
+            glowGradient.addColorStop(0, voyager.color);
+            glowGradient.addColorStop(0.3, voyager.color + '80');
+            glowGradient.addColorStop(1, voyager.color + '00');
+            
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main probe body
+            ctx.fillStyle = voyager.color;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pulsing ring
+            ctx.strokeStyle = voyager.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 15 + Math.sin(Date.now() * 0.002) * 5, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Label
+            ctx.fillStyle = voyager.color;
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(voyager.name, x, y - 25);
+            
+            // Distance label in AU
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '12px Arial';
+            ctx.fillText(`${voyager.distance.toFixed(1)} AU`, x, y + 35); // Use updated voyager.distance
+
+            // Draw light delay for voyager
+            if (showLightDelay) {
+                const delayInSeconds = calculateLightDelay(voyager.distance); // Use updated voyager.distance
+                const hours = Math.floor(delayInSeconds / 3600);
+                const minutes = Math.floor((delayInSeconds % 3600) / 60);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${hours}h ${minutes}m`, x, y - 15);
+            }
+            
+            voyager.x = x;
+            voyager.y = y;
+        }
+        
+        function drawMission(missionKey) {
+            if (!showMissions) return;
+            
+            const mission = missions[missionKey];
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            if (missionKey === 'iss') {
+                if (showMissions && showISS) { // Added showISS check
+                    const earth = planets[2];
+                    if (earth.x && earth.y) {
+                        const issAngle = (currentYear - 2025) * 365 / mission.period * Math.PI * 2 + mission.angle;
+                        const x = earth.x + Math.cos(issAngle) * (earth.radius * zoom + 10); // Orbiting closer
+                        const y = earth.y + Math.sin(issAngle) * (earth.radius * zoom + 10);
+                        
+                        // Draw ISS icon (e.g., satellite emoji or a simple graphic)
+                        ctx.font = `${16 + zoom * 4}px Arial`; // Make icon size responsive to zoom
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        // Add a slight glow or background for better visibility
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 8 + zoom*2, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.fillStyle = mission.color; 
+                        ctx.fillText('🛰️', x, y);
+                        
+                        mission.x = x;
+                        mission.y = y;
+                    }
+                }
+            } else if (missionKey === 'perseverance') {
+                const mars = planets[3];
+                if (mars.x && mars.y) {
+                    const x = mars.x + 5;
+                    const y = mars.y - 5;
+                    
+                    ctx.fillStyle = mission.color;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    mission.x = x;
+                    mission.y = y;
+                }
+            } else if (missionKey === 'voyager1' || missionKey === 'voyager2') {
+                // Update DOM elements for distance in Mission Control panel
+                // using the new accurate model.
+                let ref_year, ref_dist, current_speed_au, mission_name;
+                if (missionKey === 'voyager1') {
+                    ref_year = VOYAGER1_REF_YEAR;
+                    ref_dist = VOYAGER1_REF_DIST_AU;
+                    current_speed_au = VOYAGER1_SPEED_AU_PER_YEAR;
+                    mission_name = 'Voyager 1';
+                } else { // voyager2
+                    ref_year = VOYAGER2_REF_YEAR;
+                    ref_dist = VOYAGER2_REF_DIST_AU;
+                    current_speed_au = VOYAGER2_SPEED_AU_PER_YEAR;
+                    mission_name = 'Voyager 2';
+                }
+
+                const years_from_ref = currentYear - ref_year;
+                const current_sim_distance = ref_dist + (years_from_ref * current_speed_au);
+                
+                const elementId = missionKey === 'voyager1' ? 'v1Distance' : 'v2Distance';
+                const distanceElement = document.getElementById(elementId);
+                if (distanceElement) {
+                     distanceElement.textContent = current_sim_distance.toFixed(1);
+                }
+                // Store this accurate distance in the mission object for showMissionInfo
+                mission.distanceFromSun = current_sim_distance;
+
+            } else if (missionKey === 'jwst') {
+                if (showMissions && showJWST && mission.x && mission.y) { // Added showJWST check
+                    let drawX = mission.x;
+                    let drawY = mission.y;
+
+                    // Apply a visual offset if Earth and its angle are defined
+                    if (mission.atL2 && planets[2] && typeof planets[2].angle !== 'undefined') {
+                        const earthAngle = planets[2].angle;
+                        const offsetMagnitude = 15; // Visual offset in pixels
+                        drawX += Math.cos(earthAngle + Math.PI / 2) * offsetMagnitude;
+                        drawY += Math.sin(earthAngle + Math.PI / 2) * offsetMagnitude;
+                    }
+
+                    ctx.save();
+                    ctx.translate(drawX, drawY); // Use offset coordinates
+                    ctx.rotate(Date.now() * 0.0001);
+                    
+                    ctx.strokeStyle = mission.color;
+                    ctx.lineWidth = 2;
+                    
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = i * Math.PI / 3;
+                        const x = Math.cos(angle) * 8;
+                        const y = Math.sin(angle) * 8;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                }
+            }
+        }
+        
+        function drawBlackHole() {
+            if (!showBlackHole) return;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            blackHole.x = centerX + Math.cos(blackHole.angle) * blackHole.distance * zoom;
+            blackHole.y = centerY + Math.sin(blackHole.angle) * blackHole.distance * zoom;
+            
+            // Draw accretion disk
+            blackHole.accretionDisk.forEach(particle => {
+                particle.angle += particle.speed * (1 + 10 / particle.radius);
+                particle.radius -= 0.05;
+                
+                if (particle.radius < blackHole.radius) {
+                    particle.radius = blackHole.radius + 40;
+                    particle.angle = Math.random() * Math.PI * 2;
+                }
+                
+                const px = blackHole.x + Math.cos(particle.angle) * particle.radius * zoom;
+                const py = blackHole.y + Math.sin(particle.angle) * particle.radius * zoom;
+                
+                const brightness = 1 - (particle.radius - blackHole.radius) / 40;
+                ctx.fillStyle = particle.color + Math.floor(brightness * 255).toString(16).padStart(2, '0');
+                ctx.beginPath();
+                ctx.arc(px, py, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw event horizon
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(blackHole.x, blackHole.y, blackHole.radius * zoom, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw photon sphere
+            const gradient = ctx.createRadialGradient(
+                blackHole.x, blackHole.y, blackHole.radius * zoom,
+                blackHole.x, blackHole.y, blackHole.radius * zoom * 1.5
+            );
+            gradient.addColorStop(0, 'rgba(255, 100, 100, 0)');
+            gradient.addColorStop(0.5, 'rgba(255, 200, 100, 0.8)');
+            gradient.addColorStop(1, 'rgba(255, 100, 100, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(blackHole.x, blackHole.y, blackHole.radius * zoom * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawLightSpeedIndicator() {
+            if (!showLightDelay) return;
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Draw expanding light wave from sun
+            const waveRadius = ((Date.now() / 100) % 100) * 5 * zoom;
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Info text
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Light Speed: 299,792 km/s / ${(299792 * 0.621371).toLocaleString(undefined, {maximumFractionDigits: 0})} miles/s`, 20, height - 40);
+            ctx.fillText('1 AU = 8.3 light minutes', 20, height - 20);
+        }
+        
+        function applyGravitationalLensing(starX, starY, massX, massY, mass, radius) {
+            const dx = starX - massX;
+            const dy = starY - massY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            const effectRadius = radius * zoom * (mass > 1000 ? 20 : 5);
+            
+            if (distance < effectRadius) {
+                const strength = (mass / 10) * (radius * zoom * 3 / distance);
+                const angle = Math.atan2(dy, dx);
+                
+                const bendX = Math.cos(angle + Math.PI/2) * strength;
+                const bendY = Math.sin(angle + Math.PI/2) * strength;
+                
+                return {
+                    x: starX + bendX,
+                    y: starY + bendY,
+                    distorted: true,
+                    distortion: Math.min(strength / 10, 1),
+                    stretched: mass > 1000 && distance < radius * zoom * 10
+                };
+            }
+            
+            return { x: starX, y: starY, distorted: false };
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw background stars
+            drawStars();
+            
+            // Draw zodiac constellations
+            drawZodiacConstellations();
+            
+            // Draw sun
+            drawSun();
+            
+            // Update time
+            if (!isPaused) {
+                currentYear += animationSpeed * 0.00002;
+                document.getElementById('timeSlider').value = currentYear;
+                document.getElementById('yearDisplay').textContent = 
+                    Math.floor(currentYear) + (currentYear >= 2025 ? ' CE' : ' CE');
+            }
+            
+            // Draw based on current mode
+            if (currentMode === 'solar') {
+                // Draw solar system
+                planets.forEach(planet => {
+                    drawOrbit(planet.distance);
+                    drawPlanet(planet);
+                });
+
+                // Draw Kuiper Belt
+                drawKuiperBelt();
+
+                // Draw missions
+                Object.keys(missions).forEach(key => {
+                    drawMission(key);
+                });
+                
+                // Draw Voyager probes
+                drawVoyager(voyager1);
+                drawVoyager(voyager2);
+                
+                // Draw black hole
+                drawBlackHole();
+            } else if (currentMode === 'exoplanet') {
+                // Draw exoplanet systems
+                const centerX = width / 2;
+                const centerY = height / 2;
+                
+                // Draw system labels
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'center';
+                
+                // Regular exoplanets
+                ctx.fillText('Proxima Centauri', centerX - 300, centerY - 200);
+                ctx.fillText('Kepler-452', centerX + 300, centerY - 200);
+                ctx.fillText('HD 189733', centerX, centerY + 250);
+                
+                exoplanets.forEach(planet => {
+                    drawOrbit(planet.distance);
+                    drawPlanet(planet, true);
+                });
+                
+                // TRAPPIST-1 system
+                ctx.save();
+                ctx.translate(centerX, centerY - 300);
+                ctx.fillText('TRAPPIST-1 System', 0, -100);
+                
+                // Draw TRAPPIST-1 star (smaller, redder)
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 20 * zoom);
+                gradient.addColorStop(0, 'rgba(255, 100, 100, 1)');
+                gradient.addColorStop(0.3, 'rgba(255, 50, 50, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 50, 50, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, 20 * zoom, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FF6666';
+                ctx.beginPath();
+                ctx.arc(0, 0, 10 * zoom, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+                
+                // Draw TRAPPIST-1 planets
+                trappist1.forEach(planet => {
+                    const tAngle = calculatePlanetPosition(planet, currentYear);
+                    planet.angle = tAngle;
+                    
+                    const tx = centerX + Math.cos(planet.angle) * planet.distance * zoom;
+                    const ty = centerY - 300 + Math.sin(planet.angle) * planet.distance * zoom;
+                    
+                    // Draw orbit
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY - 300, planet.distance * zoom, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Draw planet
+                    ctx.fillStyle = planet.color;
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, planet.radius * zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    planet.x = tx;
+                    planet.y = ty;
+                });
+            }
+            
+            // Draw light speed indicator
+            drawLightSpeedIndicator();
+            
+            // Update Dyson sphere stats
+            if (dysonProgress > 0) {
+                const energy = (dysonProgress * dysonProgress * 3.828).toFixed(0);
+                document.getElementById('energyCollection').textContent = energy;
+                
+                const kardashev = (0.73 + dysonProgress / 100 * 0.27).toFixed(2);
+                document.getElementById('kardashevScale').textContent = kardashev;
+            }
+            
+            // Update minimal info
+            updateMinimalInfo();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Event listeners
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = animationSpeed.toFixed(1) + 'x';
+            updateMinimalInfo();
+        });
+        
+        document.getElementById('zoomSlider').addEventListener('input', (e) => {
+            zoom = parseFloat(e.target.value);
+            document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+        });
+        
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '▶ Play' : '⏸ Pause';
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            planets.forEach((planet, index) => {
+                planet.angle = index * 0.7;
+                planet.trail = [];
+            });
+            exoplanets.forEach((planet, index) => {
+                planet.angle = index * 1.5;
+                planet.trail = [];
+            });
+            trappist1.forEach((planet, index) => {
+                planet.angle = index * 0.9;
+                planet.trail = [];
+            });
+            voyager1.trail = [];
+            voyager2.trail = [];
+            if (missions.voyager1.trail) missions.voyager1.trail = [];
+            if (missions.voyager2.trail) missions.voyager2.trail = [];
+            currentYear = 2025;
+            document.getElementById('timeSlider').value = 2025;
+            time = 0;
+        });
+        
+        document.getElementById('trailsBtn').addEventListener('click', () => {
+            showTrails = !showTrails;
+            if (!showTrails) {
+                planets.forEach(planet => planet.trail = []);
+                exoplanets.forEach(planet => planet.trail = []);
+                trappist1.forEach(planet => planet.trail = []);
+                voyager1.trail = [];
+                voyager2.trail = [];
+                if (missions.voyager1.trail) missions.voyager1.trail = [];
+                if (missions.voyager2.trail) missions.voyager2.trail = [];
+            }
+            document.getElementById('trailsBtn').classList.toggle('active', showTrails);
+        });
+        
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            currentYear = parseFloat(e.target.value);
+            document.getElementById('yearDisplay').textContent = 
+                Math.floor(currentYear) + (currentYear >= 2025 ? ' CE' : ' CE');
+        });
+        
+        document.getElementById('dysonSlider').addEventListener('input', (e) => {
+            dysonProgress = parseFloat(e.target.value);
+            document.getElementById('dysonValue').textContent = dysonProgress + '%';
+        });
+        
+        // Toggle switches
+        document.getElementById('voyagerToggle').addEventListener('change', (e) => {
+            showVoyager = e.target.checked;
+        });
+        
+        document.getElementById('lensingToggle').addEventListener('change', (e) => {
+            showLensing = e.target.checked;
+        });
+        
+        document.getElementById('lagrangeToggle').addEventListener('change', (e) => {
+            showLagrange = e.target.checked;
+        });
+        
+        document.getElementById('blackHoleToggle').addEventListener('change', (e) => {
+            showBlackHole = e.target.checked;
+        });
+        
+        document.getElementById('missionsToggle').addEventListener('change', (e) => {
+            showMissions = e.target.checked;
+        });
+        
+        document.getElementById('kuiperBeltToggle').addEventListener('change', (e) => {
+            showKuiperBelt = e.target.checked;
+        });
+        
+        document.getElementById('jwstToggle').addEventListener('change', (e) => {
+            showJWST = e.target.checked;
+        });
+        
+        document.getElementById('issToggle').addEventListener('change', (e) => {
+            showISS = e.target.checked; // Corrected to update showISS
+        });
+        
+        // Timeline markers
+        document.querySelectorAll('.timeline-marker').forEach(marker => {
+            marker.addEventListener('click', () => {
+                const year = parseInt(marker.dataset.year);
+                currentYear = year;
+                document.getElementById('timeSlider').value = year;
+                document.getElementById('yearDisplay').textContent = year + ' CE';
+            });
+        });
+        
+        // Mission control
+        document.querySelectorAll('.mission-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const missionKey = item.dataset.mission;
+                const mission = missions[missionKey];
+                selectedMission = missionKey;
+                
+                const info = document.getElementById('infoPopup');
+                info.innerHTML = `
+                    <h3>${mission.name}</h3>
+                    ${missionKey === 'iss' ? '<p>International Space Station</p><p>Orbits Earth every 90 minutes</p><p>Altitude: 408 km</p>' : ''}
+                    ${missionKey === 'perseverance' ? '<p>Mars 2020 Rover</p><p>Exploring Jezero Crater</p><p>Searching for ancient life</p>' : ''}
+                    ${missionKey === 'voyager1' ? '<p>Launched: September 5, 1977</p><p>Farthest human-made object</p><p>Entered interstellar space: 2012</p><p>Currently: ~165 AU from Sun</p>' : ''}
+                    ${missionKey === 'voyager2' ? '<p>Launched: August 20, 1977</p><p>Grand Tour of outer planets</p><p>Entered interstellar space: 2018</p><p>Currently: ~137 AU from Sun</p>' : ''}
+                    ${missionKey === 'jwst' ? '<p>James Webb Space Telescope</p><p>Observing from L2 point</p><p>Seeing 13.5 billion years back</p>' : ''}
+                `;
+                info.style.display = 'block';
+                info.style.right = '20px';
+                info.style.top = '320px';
+                
+                setTimeout(() => {
+                    info.style.display = 'none';
+                }, 4000);
+            });
+        });
+        
+        // Mode selector
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                currentMode = card.dataset.mode;
+                showLightDelay = currentMode === 'lightspeed';
+                showZodiac = currentMode === 'zodiac';
+                updateMinimalInfo();
+                
+                const modeInfo = document.getElementById('modeInfo');
+                if (currentMode === 'exoplanet') {
+                    modeInfo.innerHTML = 'Exploring famous exoplanets including the 7-planet TRAPPIST-1 system';
+                    modeInfo.style.display = 'block';
+                } else if (currentMode === 'lightspeed') {
+                    modeInfo.innerHTML = 'See how long light takes to reach each planet';
+                    modeInfo.style.display = 'block';
+                } else if (currentMode === 'zodiac') {
+                    modeInfo.innerHTML = 'View planets through the zodiac constellations';
+                    modeInfo.style.display = 'block';
+                } else {
+                    modeInfo.style.display = 'none';
+                }
+            });
+        });
+        
+        // Set default mode
+        document.querySelector('[data-mode="solar"]').classList.add('active');
+        
+        // Click detection on canvas
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check all celestial bodies
+            const allBodies = currentMode === 'exoplanet' ? 
+                [...exoplanets, ...trappist1] : 
+                planets;
+            
+            allBodies.forEach(body => {
+                if (body.x && body.y) {
+                    const distance = Math.sqrt(
+                        Math.pow(x - body.x, 2) + Math.pow(y - body.y, 2)
+                    );
+                    
+                    if (distance < body.radius * zoom + 5) {
+                        showBodyInfo(body);
+                    }
+                }
+            });
+            
+            // Check Voyager probes
+            if (showVoyager) { // Ensure Voyager probes are generally visible
+                [voyager1, voyager2].forEach(voyager => {
+                    if (voyager.x && voyager.y) {
+                        const distance = Math.sqrt(
+                            Math.pow(x - voyager.x, 2) + Math.pow(y - voyager.y, 2)
+                        );
+                        
+                        // Make click target slightly larger than the rendered probe
+                        if (distance < 20 * zoom) { 
+                            showVoyagerInfo(voyager); // Call new function with specific voyager
+                        }
+                    }
+                });
+            }
+            
+            // Check black hole
+            if (showBlackHole && blackHole.x && blackHole.y) {
+                const distance = Math.sqrt(
+                    Math.pow(x - blackHole.x, 2) + Math.pow(y - blackHole.y, 2)
+                );
+                
+                if (distance < blackHole.radius * zoom + 10) {
+                    showBlackHoleInfo();
+                }
+            }
+            
+            // Check missions
+            Object.entries(missions).forEach(([key, mission]) => {
+                if (mission.x && mission.y) {
+                    const distance = Math.sqrt(
+                        Math.pow(x - mission.x, 2) + Math.pow(y - mission.y, 2)
+                    );
+                    
+                    if (distance < 10) {
+                        showMissionInfo(key, mission);
+                    }
+                }
+            });
+        });
+        
+        function showBodyInfo(body) {
+            const info = document.getElementById('infoPopup');
+            let content = '';
+
+            if (body.system) {
+                // Exoplanet - remains largely the same, but we can add more if data is available
+                content = `
+                    <h3>${body.name}</h3>
+                    <p><strong>System:</strong> ${body.system}</p>
+                    <p><strong>Info:</strong> ${body.info || body.size}</p>
+                    <p><strong>Orbital Period:</strong> ${(body.period * 365).toFixed(1)} Earth days</p>
+                `;
+            } else {
+                // Solar System Planet - Updated to show detailed info
+                const orbitalDistKm = (body.mean_orbital_distance_au * 149.6).toFixed(1);
+                const orbitalDistMiles = (orbitalDistKm * 0.621371).toFixed(1);
+                const diameterMiles = (body.diameter_km * 0.621371).toFixed(0);
+                let rotationPeriodDisplay = body.rotation_period_earth_days.toFixed(2) + ' Earth days';
+                if (Math.abs(body.rotation_period_earth_days) < 1) {
+                    rotationPeriodDisplay = (body.rotation_period_earth_days * 24).toFixed(1) + ' Earth hours';
+                }
+                if (body.rotation_period_earth_days < 0) {
+                    rotationPeriodDisplay += ' (retrograde)';
+                }
+                let dayLengthDisplay = body.length_of_day_earth_days.toFixed(2) + ' Earth days';
+                if (Math.abs(body.length_of_day_earth_days) < 1 && Math.abs(body.length_of_day_earth_days) > 0.01) { // Avoid for very long days like Mercury/Venus
+                     dayLengthDisplay = (body.length_of_day_earth_days * 24).toFixed(1) + ' Earth hours';
+                } else if (body.length_of_day_earth_days > 50) { // Keep very long days in Earth days
+                     dayLengthDisplay = body.length_of_day_earth_days.toFixed(1) + ' Earth days';
+                }
+
+                content = `
+                    <h3>${body.name}</h3>
+                    <p><em>${body.size}</em></p>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                    <p><strong>Mean Distance from Sun:</strong><br>${body.mean_orbital_distance_au.toFixed(3)} AU<br>(${orbitalDistKm} million km / ${orbitalDistMiles} million miles)</p>
+                    <p><strong>Diameter:</strong> ${body.diameter_km.toLocaleString()} km / ${diameterMiles.toLocaleString()} miles</p>
+                    <p><strong>Surface Gravity:</strong> ${body.surface_gravity_g} G</p>
+                    <p><strong>Rotation Period (Sidereal):</strong> ${rotationPeriodDisplay}</p>
+                    <p><strong>Length of Solar Day:</strong> ${dayLengthDisplay}</p>
+                    <p><strong>Orbital Period:</strong> ${(body.period * 365.25).toFixed(1)} Earth days</p>
+                    <p><strong>Known Moons:</strong> ${body.moons}</p>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                    <p><strong>Fun Fact:</strong> ${body.fun_fact}</p>
+                `;
+            }
+            
+            info.innerHTML = content;
+            info.style.display = 'block';
+            // Position popup near the clicked body, ensuring it's within viewport
+            let popupX = body.x + 20;
+            let popupY = body.y - info.offsetHeight / 2; // Try to center vertically
+
+            if (popupX + info.offsetWidth > width) {
+                popupX = body.x - info.offsetWidth - 20;
+            }
+            if (popupY < 10) {
+                popupY = 10;
+            }
+            if (popupY + info.offsetHeight > height -10) {
+                popupY = height - info.offsetHeight - 10;
+            }
+
+            info.style.left = popupX + 'px';
+            info.style.top = popupY + 'px';
+            info.style.transform = ''; // Reset any previous transform
+            
+            setTimeout(() => {
+                info.style.display = 'none';
+            }, 7000); // Increased display time for more data
+        }
+        
+        function showPaleBlueDot() {
+            const info = document.getElementById('infoPopup');
+            info.innerHTML = `
+                <h3>Pale Blue Dot</h3>
+                <p style="font-style: italic; font-size: 13px;">
+                    "Look again at that dot. That's here. That's home. 
+                    That's us."
+                </p>
+                <p style="text-align: right; font-size: 12px; margin-top: 10px;">
+                    - Carl Sagan, 1994
+                </p>
+            `;
+            info.style.display = 'block';
+            info.style.left = '50%';
+            info.style.top = '50%';
+            info.style.transform = 'translate(-50%, -50%)';
+            
+            const originalZoom = zoom;
+            zoom = 0.1;
+            document.getElementById('zoomSlider').value = zoom;
+            document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+            
+            setTimeout(() => {
+                info.style.display = 'none';
+                info.style.transform = '';
+                zoom = originalZoom;
+                document.getElementById('zoomSlider').value = zoom;
+                document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+            }, 6000);
+        }
+        
+        function showBlackHoleInfo() {
+            const info = document.getElementById('infoPopup');
+            info.innerHTML = `
+                <h3>🌑 Black Hole</h3>
+                <p>Stellar-mass black hole</p>
+                <p>Mass: ~10 solar masses</p>
+                <p>Event horizon: Point of no return</p>
+                <p style="margin-top: 10px; font-style: italic; font-size: 12px;">
+                    "Not even light can escape..."
+                </p>
+            `;
+            info.style.display = 'block';
+            info.style.left = blackHole.x + 'px';
+            info.style.top = (blackHole.y - 120) + 'px';
+            
+            setTimeout(() => {
+                info.style.display = 'none';
+            }, 4000);
+        }
+        
+        function showMissionInfo(key, mission) {
+            const info = document.getElementById('infoPopup');
+            
+            if (key === 'voyager1') {
+                const yearsInSpace = currentYear - mission.launched;
+                const delayInSeconds = calculateLightDelay(mission.distanceFromSun || VOYAGER1_REF_DIST_AU);
+                const hours = Math.floor(delayInSeconds / 3600);
+                const minutes = Math.floor((delayInSeconds % 3600) / 60);
+                const seconds = Math.floor(delayInSeconds % 60);
+                
+                info.innerHTML = `
+                    <h3>🛰️ Voyager 1</h3>
+                    <p><strong>Current Location:</strong> Interstellar Space</p>
+                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER1_REF_DIST_AU).toFixed(1)} AU</p>
+                    <p><strong>Years in space:</strong> ${yearsInSpace.toFixed(1)} years</p>
+                    <p><strong>Signal delay:</strong> ${hours}h ${minutes}m ${seconds}s</p>
+                    <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
+                        <p>• Launched: September 5, 1977</p>
+                        <p>• Jupiter flyby: March 1979</p>
+                        <p>• Saturn flyby: November 1980</p>
+                        <p>• Entered interstellar space: August 2012</p>
+                        <p>• Farthest human-made object from Earth</p>
+                    </div>
+                `;
+            } else if (key === 'voyager2') {
+                const yearsInSpace = currentYear - mission.launched;
+                const delayInSeconds = calculateLightDelay(mission.distanceFromSun || VOYAGER2_REF_DIST_AU);
+                const hours = Math.floor(delayInSeconds / 3600);
+                const minutes = Math.floor((delayInSeconds % 3600) / 60);
+                const seconds = Math.floor(delayInSeconds % 60);
+                
+                info.innerHTML = `
+                    <h3>🛰️ Voyager 2</h3>
+                    <p><strong>Current Location:</strong> Interstellar Space</p>
+                    <p><strong>Distance from Sun:</strong> ${(mission.distanceFromSun || VOYAGER2_REF_DIST_AU).toFixed(1)} AU</p>
+                    <p><strong>Years in space:</strong> ${yearsInSpace.toFixed(1)} years</p>
+                    <p><strong>Signal delay:</strong> ${hours}h ${minutes}m ${seconds}s</p>
+                    <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
+                        <p>• Launched: August 20, 1977</p>
+                        <p>• Jupiter flyby: July 1979</p>
+                        <p>• Saturn flyby: August 1981</p>
+                        <p>• Uranus flyby: January 1986</p>
+                        <p>• Neptune flyby: August 1989</p>
+                        <p>• Entered interstellar space: November 2018</p>
+                    </div>
+                `;
+            } else if (key === 'jwst') {
+                info.innerHTML = `
+                    <h3>📡 James Webb Space Telescope</h3>
+                    <p>Observing from Sun-Earth L2 point</p>
+                    <p>1.5 million km / ${ (1.5 * 0.621371).toFixed(2) } million miles from Earth</p>
+                    <p>Seeing the first galaxies</p>
+                `;
+            } else if (key === 'iss') {
+                info.innerHTML = `
+                    <h3>🛰️ International Space Station</h3>
+                    <p>Altitude: 408 km / ${ (408 * 0.621371).toFixed(0) } miles</p>
+                    <p>Speed: 27,600 km/h</p>
+                    <p>Orbits Earth 15.5 times per day</p>
+                `;
+            } else if (key === 'perseverance') {
+                info.innerHTML = `
+                    <h3>🔴 Perseverance Rover</h3>
+                    <p>Exploring Jezero Crater, Mars</p>
+                    <p>Searching for ancient microbial life</p>
+                    <p>Collecting rock samples</p>
+                `;
+            }
+            
+            info.style.display = 'block';
+            info.style.left = mission.x + 'px';
+            info.style.top = (mission.y - 100) + 'px';
+            
+            setTimeout(() => {
+                info.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Update minimal info display
+        function updateMinimalInfo() {
+            if (document.getElementById('minimalYear')) {
+                document.getElementById('minimalYear').textContent = Math.floor(currentYear);
+                document.getElementById('minimalSpeed').textContent = animationSpeed.toFixed(1) + 'x';
+                
+                const modeNames = {
+                    'solar': 'Solar System',
+                    'exoplanet': 'Exoplanets',
+                    'lightspeed': 'Light Speed',
+                    'zodiac': 'Zodiac'
+                };
+                document.getElementById('minimalMode').textContent = modeNames[currentMode];
+            }
+        }
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            
+            backgroundStars.forEach(star => {
+                star.x = Math.random() * width;
+                star.y = Math.random() * height;
+            });
+        });
+        
+        // UI Toggle functionality
+        let uiVisible = true;
+        const panels = ['mainControls', 'missionControl', 'modeSelector', 'timeMachine'];
+        
+        document.getElementById('uiToggle').addEventListener('click', () => {
+            toggleUI();
+        });
+        
+        function toggleUI() {
+            uiVisible = !uiVisible;
+            
+            panels.forEach(panelId => {
+                const panel = document.getElementById(panelId);
+                if (uiVisible) {
+                    panel.classList.remove('hidden');
+                } else {
+                    panel.classList.add('hidden');
+                }
+            });
+            
+            // Update toggle button
+            document.getElementById('toggleIcon').textContent = uiVisible ? '👁️' : '👁️‍🗨️';
+            document.getElementById('toggleText').textContent = uiVisible ? 'Hide UI' : 'Show UI';
+            
+            // Show/hide minimal info
+            const minimalInfo = document.getElementById('minimalInfo');
+            if (uiVisible) {
+                minimalInfo.classList.remove('visible');
+            } else {
+                minimalInfo.classList.add('visible');
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'h':
+                    toggleUI();
+                    break;
+                case 'escape':
+                    if (!uiVisible) {
+                        toggleUI();
+                    }
+                    break;
+                case ' ':
+                case 'spacebar':
+                    e.preventDefault();
+                    isPaused = !isPaused;
+                    document.getElementById('pauseBtn').textContent = isPaused ? '▶ Play' : '⏸ Pause';
+                    break;
+                case 'r':
+                    document.getElementById('resetBtn').click();
+                    break;
+                case 't':
+                    document.getElementById('trailsBtn').click();
+                    break;
+                case '1':
+                    document.querySelector('[data-mode="solar"]').click();
+                    break;
+                case '2':
+                    document.querySelector('[data-mode="exoplanet"]').click();
+                    break;
+                case '3':
+                    document.querySelector('[data-mode="lightspeed"]').click();
+                    break;
+                case '4':
+                    document.querySelector('[data-mode="zodiac"]').click();
+                    break;
+                case '+':
+                case '=':
+                    zoom = Math.min(2, zoom + 0.1);
+                    document.getElementById('zoomSlider').value = zoom;
+                    document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+                    break;
+                case '-':
+                    zoom = Math.max(0.3, zoom - 0.1);
+                    document.getElementById('zoomSlider').value = zoom;
+                    document.getElementById('zoomValue').textContent = zoom.toFixed(1) + 'x';
+                    break;
+                case 'arrowup':
+                    animationSpeed = Math.min(10, animationSpeed + 0.5);
+                    document.getElementById('speedSlider').value = animationSpeed;
+                    document.getElementById('speedValue').textContent = animationSpeed.toFixed(1) + 'x';
+                    updateMinimalInfo();
+                    break;
+                case 'arrowdown':
+                    animationSpeed = Math.max(0, animationSpeed - 0.5);
+                    document.getElementById('speedSlider').value = animationSpeed;
+                    document.getElementById('speedValue').textContent = animationSpeed.toFixed(1) + 'x';
+                    updateMinimalInfo();
+                    break;
+            }
+        });
+        
+        // Show keyboard hints on hover
+        document.getElementById('uiToggle').addEventListener('mouseenter', () => {
+            document.getElementById('keyboardHints').style.display = 'block';
+        });
+        
+        document.getElementById('uiToggle').addEventListener('mouseleave', () => {
+            document.getElementById('keyboardHints').style.display = 'none';
+        });
+        
+        // Initialize
+        animate();
+
+        function showVoyagerInfo(voyager) {
+            const info = document.getElementById('infoPopup');
+            let content = '';
+            const yearsInSpace = (currentYear - voyager.launched).toFixed(1);
+            const delayInSeconds = calculateLightDelay(voyager.distance);
+            const hours = Math.floor(delayInSeconds / 3600);
+            const minutes = Math.floor((delayInSeconds % 3600) / 60);
+            const seconds = Math.floor(delayInSeconds % 60);
+
+            if (voyager.name === 'Voyager 1') {
+                content = `
+                    <h3>🛰️ Voyager 1</h3>
+                    <p><strong>Status:</strong> Farthest human-made object, exploring interstellar space.</p>
+                    <p><strong>Launched:</strong> September 5, 1977</p>
+                    <p><strong>Distance from Sun:</strong> ${voyager.distance.toFixed(1)} AU (${(voyager.distance * 149.6).toFixed(0)} million km / ${((voyager.distance * 149.6) * 0.621371).toFixed(0)} million miles)</p>
+                    <p><strong>Years in space:</strong> ${yearsInSpace} years</p>
+                    <p><strong>Signal delay (one way):</strong> ${hours}h ${minutes}m ${seconds}s</p>
+                    <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
+                        <p>• Jupiter flyby: March 1979</p>
+                        <p>• Saturn flyby: November 1980</p>
+                        <p>• Entered interstellar space: August 2012</p>
+                        <p>• Famous for the 'Pale Blue Dot' image of Earth.</p>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                        <p><strong>Fun Facts:</strong></p>
+                        <p>  - Temp: ~2.7 K (-270°C / -455°F)</p>
+                        <p>  - A 747 jet would take over ${((voyager.distance * 149600000) / 900 / 24 / 365).toFixed(0)} years to reach this far!</p>
+                        <p>  - Its computer has ~68KB memory, millions of times less than a smartphone.</p>
+                    </div>
+                `;
+            } else if (voyager.name === 'Voyager 2') {
+                content = `
+                    <h3>🛰️ Voyager 2</h3>
+                    <p><strong>Status:</strong> Exploring interstellar space after a "Grand Tour" of the outer planets.</p>
+                    <p><strong>Launched:</strong> August 20, 1977 (before Voyager 1)</p>
+                    <p><strong>Distance from Sun:</strong> ${voyager.distance.toFixed(1)} AU (${(voyager.distance * 149.6).toFixed(0)} million km / ${((voyager.distance * 149.6) * 0.621371).toFixed(0)} million miles)</p>
+                    <p><strong>Years in space:</strong> ${yearsInSpace} years</p>
+                    <p><strong>Signal delay (one way):</strong> ${hours}h ${minutes}m ${seconds}s</p>
+                    <div style="margin-top: 10px; font-size: 12px; color: #94a3b8;">
+                        <p>• Jupiter flyby: July 1979</p>
+                        <p>• Saturn flyby: August 1981</p>
+                        <p>• Uranus flyby: January 1986</p>
+                        <p>• Neptune flyby: August 1989</p>
+                        <p>• Entered interstellar space: November 2018</p>
+                        <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+                        <p><strong>Fun Facts:</strong></p>
+                        <p>  - Temp: ~2.7 K (-270°C / -455°F)</p>
+                        <p>  - A 747 jet would take over ${((voyager.distance * 149600000) / 900 / 24 / 365).toFixed(0)} years to reach this far!</p>
+                        <p>  - Its computer has ~68KB memory, millions of times less than a smartphone.</p>
+                    </div>
+                `;
+            }
+
+            info.innerHTML = content;
+            info.style.display = 'block';
+            info.style.left = (voyager.x + 20) + 'px'; 
+            info.style.top = (voyager.y - 100) + 'px';
+            info.style.transform = '';
+
+            setTimeout(() => {
+                info.style.display = 'none';
+            }, 7000);
+        }
+    </script>
+</body>
+</html>
