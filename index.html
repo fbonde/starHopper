@@ -614,13 +614,17 @@
     <div id="timeMachine" class="panel">
         <h3>⏰ Time Machine</h3>
         <div id="yearDisplay">2025</div>
-        <input type="range" id="timeSlider" min="1900" max="2100" value="2025" step="0.1">
+        <input type="range" id="timeSlider" min="1900" max="2100" value="2025" step="1">
         <div class="timeline-markers">
             <span class="timeline-marker" data-year="1969">🌙 1969</span>
             <span class="timeline-marker" data-year="1977">🚀 1977</span>
             <span class="timeline-marker" data-year="1986">☄️ 1986</span>
             <span class="timeline-marker" data-year="2025">📍 Today</span>
             <span class="timeline-marker" data-year="2061">☄️ 2061</span>
+        </div>
+        <div id="timeEventInfo" style="margin-top: 15px; font-size: 13px; color: #94a3b8; display: none;">
+            <div id="timeEventTitle" style="font-weight: bold; color: #fbbf24; margin-bottom: 5px;"></div>
+            <div id="timeEventDescription"></div>
         </div>
     </div>
     
@@ -647,6 +651,10 @@
         let showBlackHole = true;
         let showMissions = true;
         let currentYear = 2025;
+        let targetYear = 2025; // Target year for time machine transitions
+        let isTimeTransitioning = false; // Flag for time machine transitions
+        let timeTransitionSpeed = 0.005; // Very slow transition speed
+        let wasAnimationPaused = false; // Store animation state before time travel
         let time = 0;
         let selectedMission = null;
         let currentMode = 'solar';
@@ -1767,7 +1775,27 @@
             drawSun();
             
             // Update time
-            if (!isPaused) {
+            if (isTimeTransitioning) {
+                // Auto-pause animation during time transitions
+                if (!wasAnimationPaused && !isPaused) {
+                    wasAnimationPaused = true;
+                    isPaused = true;
+                    document.getElementById('pauseBtn').textContent = '▶ Play';
+                }
+                
+                // Smooth transition to target year
+                const diff = targetYear - currentYear;
+                if (Math.abs(diff) < 0.1) {
+                    currentYear = targetYear;
+                    isTimeTransitioning = false;
+                    showTimeEventInfo(currentYear);
+                } else {
+                    currentYear += diff * timeTransitionSpeed;
+                }
+                document.getElementById('timeSlider').value = currentYear;
+                document.getElementById('yearDisplay').textContent = 
+                    Math.floor(targetYear) + (targetYear >= 2025 ? ' CE' : ' CE');
+            } else if (!isPaused) {
                 currentYear += animationSpeed * 0.00002;
                 document.getElementById('timeSlider').value = currentYear;
                 document.getElementById('yearDisplay').textContent = 
@@ -1918,6 +1946,8 @@
             if (missions.voyager1.trail) missions.voyager1.trail = [];
             if (missions.voyager2.trail) missions.voyager2.trail = [];
             currentYear = 2025;
+            targetYear = 2025;
+            isTimeTransitioning = false;
             document.getElementById('timeSlider').value = 2025;
             time = 0;
         });
@@ -1937,9 +1967,12 @@
         });
         
         document.getElementById('timeSlider').addEventListener('input', (e) => {
-            currentYear = parseFloat(e.target.value);
+            targetYear = parseFloat(e.target.value);
+            isTimeTransitioning = true;
+            wasAnimationPaused = isPaused;
             document.getElementById('yearDisplay').textContent = 
-                Math.floor(currentYear) + (currentYear >= 2025 ? ' CE' : ' CE');
+                Math.floor(targetYear) + (targetYear >= 2025 ? ' CE' : ' CE');
+            hideTimeEventInfo();
         });
         
         document.getElementById('dysonSlider').addEventListener('input', (e) => {
@@ -1984,11 +2017,48 @@
         document.querySelectorAll('.timeline-marker').forEach(marker => {
             marker.addEventListener('click', () => {
                 const year = parseInt(marker.dataset.year);
-                currentYear = year;
+                targetYear = year;
+                isTimeTransitioning = true;
+                wasAnimationPaused = isPaused;
                 document.getElementById('timeSlider').value = year;
                 document.getElementById('yearDisplay').textContent = year + ' CE';
+                hideTimeEventInfo();
             });
         });
+        
+        // Time Machine Event Info Functions
+        function showTimeEventInfo(year) {
+            const eventInfo = getTimeEventInfo(year);
+            if (eventInfo) {
+                document.getElementById('timeEventTitle').textContent = eventInfo.title;
+                document.getElementById('timeEventDescription').innerHTML = eventInfo.description;
+                document.getElementById('timeEventInfo').style.display = 'block';
+            } else {
+                hideTimeEventInfo();
+            }
+        }
+        
+        function hideTimeEventInfo() {
+            document.getElementById('timeEventInfo').style.display = 'none';
+        }
+        
+        function getTimeEventInfo(year) {
+            // Key astronomical/space events by year
+            const events = [
+                { year: 1969, title: 'Apollo 11 Moon Landing', description: '<strong>"One small step for man, one giant leap for mankind"</strong><br><br>On July 20, 1969, humans first set foot on another world when Neil Armstrong and Buzz Aldrin landed the Eagle lunar module in the Sea of Tranquility. This historic achievement marked the beginning of humanity\'s journey beyond Earth and inspired generations of space exploration.' },
+                { year: 1977, title: 'Voyager Missions Launch', description: 'Voyager 1 & 2 launched to study the outer planets. They continue to send data from interstellar space today.' },
+                { year: 1986, title: 'Halley\'s Comet Return', description: 'Halley\'s Comet made its periodic return to the inner solar system. Next return: 2061.' },
+                { year: 2025, title: 'Present Day', description: 'Current positions of planets and spacecraft as of today.' },
+                { year: 2061, title: 'Halley\'s Comet Return', description: 'Halley\'s Comet will return to the inner solar system, visible from Earth.' }
+            ];
+            
+            // Find exact match first
+            const exactMatch = events.find(event => event.year === Math.floor(year));
+            if (exactMatch) return exactMatch;
+            
+            // If no exact match, return null
+            return null;
+        }
         
         // Mission control
         document.querySelectorAll('.mission-item').forEach(item => {
