@@ -614,7 +614,33 @@
     <div id="timeMachine" class="panel">
         <h3>⏰ Time Machine</h3>
         <div id="yearDisplay">2025</div>
-        <input type="range" id="timeSlider" min="1900" max="2100" value="2025" step="1">
+        <input type="range" id="timeSlider" min="1969" max="2061" value="2025" step="1" list="timeMarkers">
+        <datalist id="timeMarkers">
+            <option value="1969"></option>
+            <option value="1977"></option>
+            <option value="1986"></option>
+            <option value="2025"></option>
+            <option value="2061"></option>
+        </datalist>
+        <style>
+            /* Custom styles for time slider and markers */
+            #timeSlider {
+                width: 100%;
+                margin: 15px 0;
+            }
+            .timeline-markers {
+                display: flex;
+                justify-content: space-between;
+                position: relative;
+                margin-top: -10px;
+            }
+            .timeline-marker {
+                cursor: pointer;
+                font-size: 12px;
+                position: relative;
+                text-align: center;
+            }
+        </style>
         <div class="timeline-markers">
             <span class="timeline-marker" data-year="1969">🌙 1969</span>
             <span class="timeline-marker" data-year="1977">🚀 1977</span>
