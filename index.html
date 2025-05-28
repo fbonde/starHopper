@@ -627,18 +627,41 @@
             #timeSlider {
                 width: 100%;
                 margin: 15px 0;
+                -webkit-appearance: none;
+                background: transparent;
+            }
+            #timeSlider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 16px;
+                width: 16px;
+                border-radius: 50%;
+                background: #60a5fa;
+                cursor: pointer;
+                margin-top: -6px;
+            }
+            #timeSlider::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 2px;
             }
             .timeline-markers {
                 display: flex;
                 justify-content: space-between;
                 position: relative;
-                margin-top: -10px;
+                margin-top: 5px;
+                padding: 0 2px;
             }
             .timeline-marker {
                 cursor: pointer;
                 font-size: 12px;
                 position: relative;
                 text-align: center;
+                padding: 5px;
+                transition: all 0.2s ease;
+            }
+            .timeline-marker:hover {
+                color: #fbbf24;
             }
         </style>
         <div class="timeline-markers">
@@ -1814,9 +1837,11 @@
                 if (Math.abs(diff) < 0.1) {
                     currentYear = targetYear;
                     isTimeTransitioning = false;
-                    showTimeEventInfo(currentYear);
+                    showTimeEventInfo(Math.round(currentYear));
                 } else {
                     currentYear += diff * timeTransitionSpeed;
+                    // Show event info during transition for closest year
+                    showTimeEventInfo(Math.round(currentYear));
                 }
                 document.getElementById('timeSlider').value = currentYear;
                 document.getElementById('yearDisplay').textContent = 
@@ -1994,11 +2019,12 @@
         
         document.getElementById('timeSlider').addEventListener('input', (e) => {
             targetYear = parseFloat(e.target.value);
-            isTimeTransitioning = true;
+            currentYear = targetYear; // Set immediately to avoid transition
+            isTimeTransitioning = false;
             wasAnimationPaused = isPaused;
             document.getElementById('yearDisplay').textContent = 
                 Math.floor(targetYear) + (targetYear >= 2025 ? ' CE' : ' CE');
-            hideTimeEventInfo();
+            showTimeEventInfo(Math.round(targetYear));
         });
         
         document.getElementById('dysonSlider').addEventListener('input', (e) => {
@@ -2044,11 +2070,12 @@
             marker.addEventListener('click', () => {
                 const year = parseInt(marker.dataset.year);
                 targetYear = year;
-                isTimeTransitioning = true;
+                currentYear = year; // Set immediately to avoid transition
+                isTimeTransitioning = false;
                 wasAnimationPaused = isPaused;
                 document.getElementById('timeSlider').value = year;
                 document.getElementById('yearDisplay').textContent = year + ' CE';
-                hideTimeEventInfo();
+                showTimeEventInfo(year);
             });
         });
         
