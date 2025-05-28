@@ -628,10 +628,15 @@
                 width: 100%;
                 margin: 15px 0;
                 -webkit-appearance: none;
+                appearance: none; /* Standard property for compatibility */
                 background: transparent;
+                position: relative;
+                z-index: 2; /* Ensure slider is above markers */
             }
+            
             #timeSlider::-webkit-slider-thumb {
                 -webkit-appearance: none;
+                appearance: none; /* Standard property for compatibility */
                 height: 16px;
                 width: 16px;
                 border-radius: 50%;
@@ -639,29 +644,59 @@
                 cursor: pointer;
                 margin-top: -6px;
             }
+            
             #timeSlider::-webkit-slider-runnable-track {
                 width: 100%;
                 height: 4px;
                 background: rgba(255, 255, 255, 0.2);
                 border-radius: 2px;
             }
+            
+            /* Precise positioning for timeline markers */
             .timeline-markers {
-                display: flex;
-                justify-content: space-between;
                 position: relative;
+                width: calc(100% - 16px); /* Account for slider thumb width */
+                margin-left: 8px; /* Half the thumb width */
+                height: 30px;
                 margin-top: 5px;
-                padding: 0 2px;
             }
+            
             .timeline-marker {
                 cursor: pointer;
                 font-size: 12px;
-                position: relative;
+                position: absolute;
                 text-align: center;
-                padding: 5px;
+                padding: 5px 0;
                 transition: all 0.2s ease;
+                transform: translateX(-50%); /* Center marker on position */
+                white-space: nowrap;
             }
+            
+            /* Precise mathematical positioning for timeline markers */
+            /* Each marker is positioned at its exact mathematical position on the timeline */
+            .timeline-marker[data-year="1969"] {
+                left: 0%;
+            }
+            
+            .timeline-marker[data-year="1977"] {
+                left: 8.7%; /* (1977-1969)/(2061-1969) * 100 = 8.7% */
+            }
+            
+            .timeline-marker[data-year="1986"] {
+                left: 18.5%; /* (1986-1969)/(2061-1969) * 100 = 18.5% */
+            }
+            
+            .timeline-marker[data-year="2025"] {
+                left: 60.5%; /* Slightly adjusted from calculated 60.9% for perfect alignment */
+            }
+            
+            .timeline-marker[data-year="2061"] {
+                left: 100%;
+            }
+            
             .timeline-marker:hover {
                 color: #fbbf24;
+                background: rgba(251, 191, 36, 0.1);
             }
         </style>
         <div class="timeline-markers">
@@ -1499,7 +1534,7 @@
             const centerX = width / 2;
             const centerY = height / 2;
             
-            // Calculate distance based on new reference model
+            // Calculate actual distance based on new reference model
             let ref_year, ref_dist, current_speed;
             if (voyager.name === 'Voyager 1') {
                 ref_year = VOYAGER1_REF_YEAR;
@@ -1511,8 +1546,34 @@
                 current_speed = VOYAGER2_SPEED_AU_PER_YEAR;
             }
             const years_from_ref = currentYear - ref_year;
-            const new_distance = ref_dist + (years_from_ref * current_speed);
-            voyager.distance = new_distance; // Update the voyager object's distance property
+            const actual_distance = ref_dist + (years_from_ref * current_speed);
+            voyager.actual_distance = actual_distance; // Store the actual distance
+            
+            // Use a scaled distance for visualization
+            // Position Voyager probes beyond the Kuiper Belt but still visible
+            // Kuiper Belt outer edge is at ~55 AU
+            
+            // Find Neptune's visual distance in our visualization as reference
+            const neptune = planets.find(p => p.name === 'Neptune');
+            const neptuneVisualDistance = neptune ? neptune.distance : 250;
+            
+            // Calculate Kuiper Belt's visual distance based on Neptune
+            // Neptune is at ~30 AU, Kuiper Belt outer edge is at ~55 AU
+            const kuiperBeltOuterVisualDistance = neptuneVisualDistance * (55/30);
+            
+            // Position Voyager probes beyond Kuiper Belt
+            // Voyager 1 is ~3 times farther than Kuiper Belt outer edge
+            // Voyager 2 is ~2.5 times farther than Kuiper Belt outer edge
+            // For visualization, we'll place them just beyond the Kuiper Belt
+            let scaleFactor;
+            if (voyager.name === 'Voyager 1') {
+                scaleFactor = 1.8; // Further out
+            } else { // Voyager 2
+                scaleFactor = 1.6; // Slightly closer
+            }
+            
+            const scaled_distance = kuiperBeltOuterVisualDistance * scaleFactor;
+            voyager.distance = scaled_distance; // Use scaled distance for drawing
             
             // Angle calculation remains based on years since launch for divergence
             const yearsSinceLaunch = currentYear - voyager.launched;
@@ -1523,8 +1584,20 @@
                 angle -= yearsSinceLaunch * 0.001;
             }
             
-            const x = centerX + Math.cos(angle) * voyager.distance * zoom; // Use updated voyager.distance
-            const y = centerY + Math.sin(angle) * voyager.distance * zoom; // Use updated voyager.distance
+            // Draw a line connecting to the actual position (which would be off-screen)
+            const direction_x = Math.cos(angle);
+            const direction_y = Math.sin(angle);
+            
+            // Calculate a position that would be visible on screen
+            const x = centerX + direction_x * scaled_distance * zoom;
+            const y = centerY + direction_y * scaled_distance * zoom;
+            
+            // Draw orbit path for reference
+            ctx.strokeStyle = voyager.color + '20'; // Very light
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, scaled_distance * zoom, 0, Math.PI * 2);
+            ctx.stroke();
             
             // Update trail
             voyager.trail.push({ x, y });
@@ -1585,14 +1658,23 @@
             ctx.textAlign = 'center';
             ctx.fillText(voyager.name, x, y - 25);
             
-            // Distance label in AU
+            // Show distance label with comparison to Neptune
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.font = '12px Arial';
-            ctx.fillText(`${voyager.distance.toFixed(1)} AU`, x, y + 35); // Use updated voyager.distance
+            ctx.fillText(`${voyager.actual_distance.toFixed(1)} AU`, x, y + 35);
+            
+            // Calculate times farther than Kuiper Belt outer edge
+            const kuiper_belt_outer_edge = 55; // Kuiper Belt outer edge is ~55 AU from Sun
+            const times_farther = (voyager.actual_distance / kuiper_belt_outer_edge).toFixed(1);
+            
+            // Add comparison to Kuiper Belt
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = '10px Arial';
+            ctx.fillText(`${times_farther}× beyond Kuiper Belt edge`, x, y + 50);
 
-            // Draw light delay for voyager
+            // Draw light delay for voyager using actual distance
             if (showLightDelay) {
-                const delayInSeconds = calculateLightDelay(voyager.distance); // Use updated voyager.distance
+                const delayInSeconds = calculateLightDelay(voyager.actual_distance);
                 const hours = Math.floor(delayInSeconds / 3600);
                 const minutes = Math.floor((delayInSeconds % 3600) / 60);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
